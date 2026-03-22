@@ -63,9 +63,18 @@ impl ArhivedSigners {
     }
 }
 
-impl From<ArhivedSigners> for Signers {
-    fn from(value: ArhivedSigners) -> Self {
-        Self {
+impl TryFrom<ArhivedSigners> for Signers {
+    fn try_from(value: ArhivedSigners) -> Result<Self, Self::Error> {
+        let len = value.signers.len();
+        let payer = value.payer_idx as usize;
+        let tip_payer = value.tip_payer_idx as usize;
+        if payer >= len {
+            return Err("Bad payer idx");
+        }
+        if tip_payer >= len {
+            return Err("Bad tip_payer idx");
+        }
+        Ok(Self {
             signers: value
                 .signers
                 .into_iter()
@@ -73,8 +82,10 @@ impl From<ArhivedSigners> for Signers {
                 .collect(),
             payer: value.payer_idx as usize,
             tip_payer: value.tip_payer_idx as usize,
-        }
+        })
     }
+
+    type Error = &'static str;
 }
 
 pub struct Signers {
@@ -231,10 +242,6 @@ impl SendProcessors {
         if self.blocksprint {
             num_procs += 1;
         }
-        // if self.tpu_pen {
-        //     num_procs += 1
-        // }
-
         num_procs
     }
 }
