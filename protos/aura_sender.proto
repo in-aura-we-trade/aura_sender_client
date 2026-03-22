@@ -1,0 +1,23 @@
+//CODEGEN BELOW - DO NOT TOUCH ME
+syntax = "proto3";
+package aura_sender;
+
+import "aura_sender_types.proto";
+import "solana.proto";
+
+message Done {
+  repeated solana.Signature sigs = 1;
+}
+
+message Ping {
+  uint32 id = 1;
+}
+
+message Pong {
+  uint32 id = 1;
+}
+
+service AuraSenderRpc {
+  rpc SendTransaction(aura_sender_types.TxnData) returns (Done);
+  rpc Ping(Ping) returns (Pong);
+}

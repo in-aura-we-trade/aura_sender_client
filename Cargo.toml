@@ -1,0 +1,22 @@
+[package]
+name = "aura_sender_client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+inventory = { version = "0.3", optional = true }
+proto_rs = { version = "0.11.18", features = ["solana", "stable"], optional = true }
+solana-address = { version = "2", features = ["wincode"] }
+solana-hash = "4"
+solana-instruction = { version = "3", features = ["wincode"] }
+solana-keypair = "3.1"
+solana-message = { version = "4", features = ["wincode"] }
+solana-signature = { version = "3", optional = true }
+tonic = { version = "0.14", optional = true }
+wincode = { version = "0.4.4" }
+
+[features]
+default = []
+build-schemas = ["dep:inventory", "proto", "proto_rs/build-schemas"]
+client = ["dep:solana-signature", "dep:tonic"]
+proto = ["dep:proto_rs"]

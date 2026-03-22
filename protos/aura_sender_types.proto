@@ -1,0 +1,82 @@
+//CODEGEN BELOW - DO NOT TOUCH ME
+syntax = "proto3";
+package aura_sender_types;
+
+import "solana.proto";
+
+message ArhivedSigners {
+  bytes signers = 1;
+  uint32 payer_idx = 2;
+  uint32 tip_payer_idx = 3;
+}
+
+message AuraMeta {
+  bool main_endpoint = 1;
+  bool revert_endpoint = 2;
+}
+
+message SendProcessors {
+  bool jito_validators = 1;
+  bool jito_bundled = 2;
+  AuraMeta aura = 3;
+  bool bloxroute = 4;
+  bool nozomi = 5;
+  bool next_block = 6;
+  bool slot0 = 7;
+  bool astra = 8;
+  bool block_razor = 9;
+  bool node1 = 10;
+  bool helius = 11;
+  bool stellium = 12;
+  bool soyas = 13;
+  bool falcon = 14;
+  bool raiden = 15;
+  bool circular = 16;
+  bool flash_block = 17;
+  bool moon = 18;
+  bool blocksprint = 19;
+}
+
+message TxnData {
+  ArhivedSigners signers = 1;
+  TxnMeta meta = 2;
+  ArchivedTxnKind kind = 3;
+  uint64 slot = 4;
+}
+
+message TxnMeta {
+  bool include_dont_front = 1;
+  optional uint32 max_cu = 2;
+  optional uint32 max_loaded_data = 3;
+  optional uint64 max_tip = 4;
+  optional uint64 max_fee = 5;
+  optional uint64 max_total = 6;
+  repeated solana.Instruction insts = 7;
+  repeated TxnPriorityStrat txn_priorities = 8;
+  SendProcessors procs = 9;
+  solana.Hash recent_blockhash = 10;
+}
+
+message ArchivedTxnKindLegacy {}
+message ArchivedTxnKind {
+  oneof value {
+    ArchivedTxnKindLegacy legacy = 1;
+    ArchivedAddressLookupTableAccount versioned = 2;
+  }
+}
+
+message TxnPriorityStratExact {}
+
+message TxnPriorityStratMinTipAndFeeRest {}
+
+message TxnPriorityStratMinTipAndExactFee {}
+message TxnPriorityStrat {
+  oneof value {
+    TxnPriorityStratExact exact = 1;
+    uint32 bps_fee_and_exact_tip = 2;
+    uint32 bps_fee_from_total = 3;
+    TxnPriorityStratMinTipAndFeeRest min_tip_and_fee_rest = 4;
+    TxnPriorityStratMinTipAndExactFee min_tip_and_exact_fee = 5;
+  }
+}
+
