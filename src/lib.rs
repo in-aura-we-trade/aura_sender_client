@@ -127,7 +127,7 @@ pub struct TxnMeta {
     feature = "proto",
     proto_message(proto_path = "live_protos/aura_sender_types.proto")
 )]
-#[derive(SchemaWrite, SchemaRead)]
+#[derive(SchemaWrite, SchemaRead, Clone)]
 pub struct AuraMeta {
     pub main_endpoint: bool,
     pub revert_endpoint: bool,
