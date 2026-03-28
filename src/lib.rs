@@ -15,6 +15,9 @@ pub const API_KEY_HEADER: &str = "key";
 #[cfg(feature = "client")]
 pub mod client;
 
+#[cfg(feature = "ffi")]
+pub mod ffi;
+
 #[cfg(feature = "client")]
 pub trait TxnAuthInterceptor: Send + Sync + 'static + Sized {
     type Payload;
