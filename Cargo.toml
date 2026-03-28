@@ -21,5 +21,5 @@ wincode = { version = "0.4", features = ["derive"] }
 default = []
 build-schemas = ["dep:inventory", "proto", "proto_rs/build-schemas"]
 client = ["dep:solana-signature", "dep:tonic", "proto"]
-ffi = ["dep:anyhow", "dep:libloading"]
+ffi = ["dep:anyhow", "dep:libloading", "dep:solana-signature"]
 proto = ["dep:proto_rs"]
