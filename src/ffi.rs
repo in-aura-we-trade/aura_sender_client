@@ -18,7 +18,7 @@ pub struct AuraInitConfig {
 /// target, and global allocator. No stable ABI guarantee otherwise.
 /// Each FFI function returns `Box::into_raw(Box::new(Result<T, String>))`.
 type FfiInit = unsafe extern "C" fn(AuraInitConfig) -> *mut Result<(), String>;
-type FfiCall<Req, Resp> = unsafe extern "C" fn(*const Req) -> *mut Result<Resp, String>;
+type FfiCall<Req, Resp> = unsafe extern "C" fn(Req) -> *mut Result<Resp, String>;
 
 const SYMBOL_INIT: &[u8] = b"aura_ffi_init\0";
 const SYMBOL_SEND: &[u8] = b"aura_send_transaction\0";
@@ -61,7 +61,7 @@ impl AuraSenderLib {
         unsafe { take_result((self.init_fn)(cfg)) }
     }
 
-    pub fn send_transaction(&self, txn: &TxnData) -> Result<Vec<Signature>> {
+    pub fn send_transaction(&self, txn: TxnData) -> Result<Vec<Signature>> {
         unsafe { take_result((self.send_fn)(txn)) }
     }
 }
