@@ -140,10 +140,37 @@ pub struct AuraMeta {
     feature = "proto",
     proto_message(proto_path = "live_protos/aura_sender_types.proto")
 )]
+#[derive(SchemaWrite, SchemaRead, Clone)]
+pub struct FalconMeta {
+    pub low_tip_only: bool,
+}
+
+#[cfg_attr(
+    feature = "proto",
+    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+)]
+#[derive(SchemaWrite, SchemaRead, Clone)]
+pub struct JitoMeta {
+    pub grpc: bool,
+    pub rpc: bool,
+}
+
+#[cfg_attr(
+    feature = "proto",
+    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+)]
+#[derive(SchemaWrite, SchemaRead, Clone)]
+pub struct HeliusMeta {
+    pub sqwos_only: bool,
+}
+
+#[cfg_attr(
+    feature = "proto",
+    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+)]
 #[derive(SchemaWrite, SchemaRead)]
 pub struct SendProcessors {
-    pub jito_validators: bool,
-    pub jito_bundled: bool,
+    pub jito: Option<JitoMeta>,
     pub aura: AuraMeta,
     pub bloxroute: bool,
     pub nozomi: bool,
@@ -152,20 +179,20 @@ pub struct SendProcessors {
     pub astra: bool,
     pub block_razor: bool,
     pub node1: bool,
-    pub helius: bool,
+    pub helius: Option<HeliusMeta>,
     pub stellium: bool,
     pub soyas: bool,
-    pub falcon: bool,
+    pub falcon: Option<FalconMeta>,
     pub raiden: bool,
     pub circular: bool,
     pub flash_block: bool,
     pub moon: bool,
     pub blocksprint: bool,
 }
+
 impl SendProcessors {
     pub fn is_some(&self) -> bool {
-        self.jito_validators
-            || self.jito_bundled
+        self.jito.as_ref().is_some_and(|x| x.grpc || x.rpc)
             || self.aura.main_endpoint
             || self.aura.revert_endpoint
             || self.bloxroute
@@ -175,10 +202,10 @@ impl SendProcessors {
             || self.astra
             || self.block_razor
             || self.node1
-            || self.helius
+            || self.helius.is_some()
             || self.stellium
             || self.soyas
-            || self.falcon
+            || self.falcon.is_some()
             || self.circular
             || self.raiden
             || self.flash_block
@@ -188,7 +215,7 @@ impl SendProcessors {
     pub fn number(&self) -> usize {
         let mut num_procs = 0;
 
-        if self.jito_validators {
+        if self.jito.as_ref().is_some_and(|x| x.grpc || x.rpc) {
             num_procs += 1
         }
         if self.aura.main_endpoint || self.aura.revert_endpoint {
@@ -215,18 +242,14 @@ impl SendProcessors {
         if self.node1 {
             num_procs += 1
         }
-        if self.helius {
-            num_procs += 1
-        }
-
-        if self.helius {
+        if self.helius.is_some() {
             num_procs += 1
         }
 
         if self.soyas {
             num_procs += 1;
         }
-        if self.falcon {
+        if self.falcon.is_some() {
             num_procs += 1;
         }
         if self.circular {
