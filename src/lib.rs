@@ -170,7 +170,7 @@ pub struct HeliusMeta {
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub struct SendProcessors {
-    pub jito: Option<JitoMeta>,
+    pub jito: JitoMeta,
     pub aura: AuraMeta,
     pub bloxroute: bool,
     pub nozomi: bool,
@@ -192,7 +192,8 @@ pub struct SendProcessors {
 
 impl SendProcessors {
     pub fn is_some(&self) -> bool {
-        self.jito.as_ref().is_some_and(|x| x.grpc || x.rpc)
+        self.jito.grpc
+            || self.jito.rpc
             || self.aura.main_endpoint
             || self.aura.revert_endpoint
             || self.bloxroute
@@ -215,7 +216,7 @@ impl SendProcessors {
     pub fn number(&self) -> usize {
         let mut num_procs = 0;
 
-        if self.jito.as_ref().is_some_and(|x| x.grpc || x.rpc) {
+        if self.jito.grpc || self.jito.rpc {
             num_procs += 1
         }
         if self.aura.main_endpoint || self.aura.revert_endpoint {
