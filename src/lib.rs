@@ -56,6 +56,18 @@ pub struct TxnData {
     pub slot: u64,
 }
 
+#[cfg(feature = "ffi")]
+#[repr(C)]
+pub struct TxnDataFfi<'a> {
+    pub meta: TxnMeta,
+    pub payer_pubkey: Address,
+    pub slot: u64,
+    pub signers: &'a [&'a Keypair],
+    pub payer: &'a Keypair,
+    pub tip_payer: &'a Keypair,
+    pub kind: TxnKind<'a>,
+}
+
 impl ArhivedSigners {
     pub fn new(signers: Vec<Keypair>, payer_idx: u8, tip_payer_idx: u8) -> Self {
         Self {
