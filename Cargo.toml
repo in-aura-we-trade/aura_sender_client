@@ -15,7 +15,7 @@ solana-keypair = "3.1"
 solana-message = { version = "4", features = ["wincode"] }
 solana-signature = { version = "3", optional = true }
 tonic = { version = "0.14", optional = true }
-wincode = { version = "0.4", features = ["derive"] }
+wincode = { version = "0.5", features = ["derive"] }
 
 [features]
 default = []
