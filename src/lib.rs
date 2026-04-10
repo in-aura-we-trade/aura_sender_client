@@ -125,6 +125,7 @@ pub struct ArhivedSigners {
     proto_message(proto_path = "live_protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
+#[repr(C)]
 pub struct TxnMeta {
     pub include_dont_front: bool,
     pub max_cu: Option<NonZeroU32>,

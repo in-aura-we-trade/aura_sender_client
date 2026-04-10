@@ -17,7 +17,7 @@ pub struct AuraInitConfig {
 /// Both the .so and loader MUST be compiled with the same rustc version,
 /// target, and global allocator. No stable ABI guarantee otherwise.
 type FfiInit = unsafe extern "C" fn(AuraInitConfig) -> *mut Result<(), String>;
-type FfiCall<Req, Resp> = unsafe extern "C" fn(Req) -> Resp;
+type FfiSend = for<'a> unsafe extern "C" fn(TxnDataFfi<'a>) -> Vec<Signature>;
 
 const SYMBOL_INIT: &[u8] = b"aura_ffi_init\0";
 const SYMBOL_SEND: &[u8] = b"aura_send_transaction\0";
@@ -27,7 +27,7 @@ static LIB: OnceLock<AuraSenderLib> = OnceLock::new();
 pub fn load_aura_sender(
     path: impl AsRef<Path>,
     cfg: AuraInitConfig,
-) -> Result<&'static AuraSenderLib<'static>> {
+) -> Result<&'static AuraSenderLib> {
     if let Some(lib) = LIB.get() {
         return Ok(lib);
     }
@@ -37,20 +37,20 @@ pub fn load_aura_sender(
     Ok(LIB.get().unwrap())
 }
 
-pub struct AuraSenderLib<'a> {
+pub struct AuraSenderLib {
     _lib: Library,
     init_fn: FfiInit,
-    send_fn: FfiCall<TxnDataFfi<'a>, Vec<Signature>>,
+    send_fn: FfiSend,
 }
 
-impl<'a> AuraSenderLib<'a> {
+impl AuraSenderLib {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let lib = unsafe { Library::new(path.as_ref()) }
             .with_context(|| format!("failed to load shared library {:?}", path.as_ref()))?;
         unsafe {
             Ok(Self {
                 init_fn: *lib.get::<FfiInit>(SYMBOL_INIT)?,
-                send_fn: *lib.get::<FfiCall<TxnDataFfi<'_>, Vec<Signature>>>(SYMBOL_SEND)?,
+                send_fn: *lib.get::<FfiSend>(SYMBOL_SEND)?,
                 _lib: lib,
             })
         }
@@ -60,7 +60,7 @@ impl<'a> AuraSenderLib<'a> {
         unsafe { take_result((self.init_fn)(cfg)) }
     }
     #[inline]
-    pub fn send_transaction(&self, txn: TxnDataFfi<'a>) -> Vec<Signature> {
+    pub fn send_transaction(&self, txn: TxnDataFfi) -> Vec<Signature> {
         unsafe { (self.send_fn)(txn) }
     }
 }
