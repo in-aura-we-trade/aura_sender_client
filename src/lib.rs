@@ -5,7 +5,7 @@ use std::sync::Arc;
 use proto_rs::proto_message;
 use solana_address::Address;
 use solana_hash::Hash;
-use solana_keypair::Keypair;
+use solana_keypair::{Keypair, Signer};
 use solana_message::{AddressLookupTableAccount, Instruction};
 use wincode::{SchemaRead, SchemaWrite};
 
@@ -65,7 +65,7 @@ pub struct TxnDataFfi<'a> {
     pub signers: &'a [&'a Keypair],
     pub payer: &'a Keypair,
     pub tip_payer: &'a Keypair,
-    pub kind: TxnKind<'a>,
+    pub kind: TxnKind,
 }
 
 impl ArhivedSigners {
@@ -78,7 +78,7 @@ impl ArhivedSigners {
     }
 }
 
-impl TryFrom<ArhivedSigners> for Signers {
+impl TryFrom<ArhivedSigners> for OwnedSigners {
     fn try_from(value: ArhivedSigners) -> Result<Self, Self::Error> {
         let len = value.signers.len();
         let payer = value.payer_idx as usize;
@@ -103,7 +103,7 @@ impl TryFrom<ArhivedSigners> for Signers {
     type Error = &'static str;
 }
 
-pub struct Signers {
+pub struct OwnedSigners {
     pub signers: Vec<Keypair>,
     pub payer: usize,
     pub tip_payer: usize,
@@ -307,22 +307,6 @@ pub enum ArchivedTxnKind {
     Versioned(Vec<ArchivedAddressLookupTableAccount>),
 }
 
-pub enum TxnKindOwned {
-    Legacy,
-    Versioned(Vec<AddressLookupTableAccount>),
-}
-
-impl From<ArchivedTxnKind> for TxnKindOwned {
-    fn from(value: ArchivedTxnKind) -> Self {
-        match value {
-            ArchivedTxnKind::Legacy => Self::Legacy,
-            ArchivedTxnKind::Versioned(v) => {
-                Self::Versioned(v.into_iter().map(Into::into).collect())
-            }
-        }
-    }
-}
-
 #[cfg_attr(
     feature = "proto",
     proto_message(proto_path = "protos/aura_sender_types.proto")
@@ -341,54 +325,54 @@ impl From<ArchivedAddressLookupTableAccount> for AddressLookupTableAccount {
     }
 }
 
-pub enum TxnKind<T> {
+pub trait SignersExt {
+    type Signers: solana_transaction::Signers + ?Sized;
+    fn signers(&self) -> &Self::Signers;
+    fn fee_payer(&self) -> &Keypair;
+    fn tip_payer(&self) -> &Keypair;
+}
+
+pub enum TxnKind {
     Legacy,
-    Versioned(T),
+    VersionedOne(AddressLookupTableAccount),
+    VersionedOneArc(Arc<AddressLookupTableAccount>),
+    VersionedMany(Vec<AddressLookupTableAccount>),
+    VersionedManyArcVec(Arc<Vec<AddressLookupTableAccount>>),
+    VersionedManyArcSlice(Arc<[AddressLookupTableAccount]>),
 }
 
-pub struct TxnVersionedOneTable(AddressLookupTableAccount);
+pub struct SignersValidated {
+    signers: Vec<Arc<Keypair>>,
+    payer: Arc<Keypair>,
+    tip_payer: Arc<Keypair>,
+    payer_pubkey: Address,
+}
 
-impl TxnVersionedOneTable {
-    pub fn new(key: Address, addresses: Vec<Address>) -> Self {
-        Self(AddressLookupTableAccount { key, addresses })
+impl SignersValidated {
+    pub fn new(signers: Vec<Arc<Keypair>>, payer: Arc<Keypair>, tip_payer: Arc<Keypair>) -> Self {
+        let payer_pubkey = payer.pubkey();
+        Self {
+            signers,
+            payer,
+            tip_payer,
+            payer_pubkey,
+        }
     }
-}
 
-impl<'a> LutExt<'a> for TxnVersionedOneTable {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        std::slice::from_ref(&self.0)
+    #[inline]
+    pub fn signers(&self) -> &[Arc<Keypair>] {
+        self.signers.as_slice()
     }
-}
-
-pub trait LutExt<'a> {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount];
-}
-
-impl<'a> LutExt<'a> for Arc<AddressLookupTableAccount> {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        std::slice::from_ref(self.as_ref())
+    #[inline]
+    pub fn payer(&self) -> &Keypair {
+        &self.payer
     }
-}
-impl<'a> LutExt<'a> for Vec<AddressLookupTableAccount> {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        self.as_slice()
+    #[inline]
+    pub fn tip_payer(&self) -> &Keypair {
+        &self.tip_payer
     }
-}
-
-impl<'a> LutExt<'a> for Arc<Vec<AddressLookupTableAccount>> {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        self.as_slice()
-    }
-}
-
-impl<'a> LutExt<'a> for Arc<[AddressLookupTableAccount]> {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        &self[..]
-    }
-}
-
-impl<'a> LutExt<'a> for AddressLookupTableAccount {
-    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
-        std::slice::from_ref(self)
+    #[inline]
+    pub fn payer_pubkey(&self) -> &Address {
+        &self.payer_pubkey
     }
 }

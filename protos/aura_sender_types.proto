@@ -2,10 +2,21 @@
 syntax = "proto3";
 package aura_sender_types;
 
-import "solana.proto";
+message ArchivedAddressLookupTableAccount {
+  Address key = 1;
+  repeated Address addresses = 2;
+}
+
+message ArchivedTxnKindLegacy {}
+message ArchivedTxnKind {
+  oneof value {
+    ArchivedTxnKindLegacy legacy = 1;
+    ArchivedAddressLookupTableAccount versioned = 2;
+  }
+}
 
 message ArhivedSigners {
-  bytes signers = 1;
+  repeated bytes signers = 1;
   uint32 payer_idx = 2;
   uint32 tip_payer_idx = 3;
 }
@@ -15,26 +26,36 @@ message AuraMeta {
   bool revert_endpoint = 2;
 }
 
+message FalconMeta {}
+
+message HeliusMeta {
+  bool sqwos_only = 1;
+}
+
+message JitoMeta {
+  bool grpc = 1;
+  bool rpc = 2;
+}
+
 message SendProcessors {
-  bool jito_validators = 1;
-  bool jito_bundled = 2;
-  AuraMeta aura = 3;
-  bool bloxroute = 4;
-  bool nozomi = 5;
-  bool next_block = 6;
-  bool slot0 = 7;
-  bool astra = 8;
-  bool block_razor = 9;
-  bool node1 = 10;
-  bool helius = 11;
-  bool stellium = 12;
-  bool soyas = 13;
-  bool falcon = 14;
-  bool raiden = 15;
-  bool circular = 16;
-  bool flash_block = 17;
-  bool moon = 18;
-  bool blocksprint = 19;
+  JitoMeta jito = 1;
+  AuraMeta aura = 2;
+  bool bloxroute = 3;
+  bool nozomi = 4;
+  bool next_block = 5;
+  bool slot0 = 6;
+  bool astra = 7;
+  bool block_razor = 8;
+  bool node1 = 9;
+  optional HeliusMeta helius = 10;
+  bool stellium = 11;
+  bool soyas = 12;
+  optional FalconMeta falcon = 13;
+  bool raiden = 14;
+  bool circular = 15;
+  bool flash_block = 16;
+  bool moon = 17;
+  bool blocksprint = 18;
 }
 
 message TxnData {
@@ -51,18 +72,10 @@ message TxnMeta {
   optional uint64 max_tip = 4;
   optional uint64 max_fee = 5;
   optional uint64 max_total = 6;
-  repeated solana.Instruction insts = 7;
+  repeated Instruction insts = 7;
   repeated TxnPriorityStrat txn_priorities = 8;
   SendProcessors procs = 9;
-  solana.Hash recent_blockhash = 10;
-}
-
-message ArchivedTxnKindLegacy {}
-message ArchivedTxnKind {
-  oneof value {
-    ArchivedTxnKindLegacy legacy = 1;
-    ArchivedAddressLookupTableAccount versioned = 2;
-  }
+  Hash recent_blockhash = 10;
 }
 
 message TxnPriorityStratExact {}
