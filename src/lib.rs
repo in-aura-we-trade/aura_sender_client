@@ -46,7 +46,7 @@ impl TxnAuthInterceptor for String {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub struct TxnData {
@@ -111,7 +111,7 @@ pub struct Signers {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub struct ArhivedSigners {
@@ -122,7 +122,7 @@ pub struct ArhivedSigners {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 #[repr(C)]
@@ -141,7 +141,7 @@ pub struct TxnMeta {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead, Clone)]
 pub struct AuraMeta {
@@ -151,16 +151,14 @@ pub struct AuraMeta {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead, Clone)]
-pub struct FalconMeta {
-    pub low_tip_only: bool,
-}
+pub struct FalconMeta;
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead, Clone)]
 pub struct JitoMeta {
@@ -170,7 +168,7 @@ pub struct JitoMeta {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead, Clone)]
 pub struct HeliusMeta {
@@ -179,7 +177,7 @@ pub struct HeliusMeta {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub struct SendProcessors {
@@ -288,7 +286,7 @@ impl SendProcessors {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub enum TxnPriorityStrat {
@@ -301,7 +299,7 @@ pub enum TxnPriorityStrat {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead)]
 pub enum ArchivedTxnKind {
@@ -327,7 +325,7 @@ impl From<ArchivedTxnKind> for TxnKindOwned {
 
 #[cfg_attr(
     feature = "proto",
-    proto_message(proto_path = "live_protos/aura_sender_types.proto")
+    proto_message(proto_path = "protos/aura_sender_types.proto")
 )]
 #[derive(SchemaWrite, SchemaRead, Debug, PartialEq, Eq, Clone)]
 pub struct ArchivedAddressLookupTableAccount {
@@ -343,9 +341,9 @@ impl From<ArchivedAddressLookupTableAccount> for AddressLookupTableAccount {
     }
 }
 
-pub enum TxnKind<'a> {
+pub enum TxnKind<T> {
     Legacy,
-    Versioned(&'a [AddressLookupTableAccount]),
+    Versioned(T),
 }
 
 pub struct TxnVersionedOneTable(AddressLookupTableAccount);
@@ -356,67 +354,41 @@ impl TxnVersionedOneTable {
     }
 }
 
-impl<'a> TxnKindExt<'a> for TxnVersionedOneTable {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(std::slice::from_ref(&self.0))
+impl<'a> LutExt<'a> for TxnVersionedOneTable {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        std::slice::from_ref(&self.0)
     }
 }
 
-pub trait TxnKindExt<'a> {
-    fn compile(&'a self) -> TxnKind<'a>;
+pub trait LutExt<'a> {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount];
 }
 
-impl<'a> TxnKindExt<'a> for TxnKind<'a> {
-    fn compile(&'a self) -> TxnKind<'a> {
-        match self {
-            TxnKind::Legacy => TxnKind::Legacy,
-            TxnKind::Versioned(address_lookup_table_accounts) => {
-                TxnKind::Versioned(address_lookup_table_accounts)
-            }
-        }
+impl<'a> LutExt<'a> for Arc<AddressLookupTableAccount> {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        std::slice::from_ref(self.as_ref())
+    }
+}
+impl<'a> LutExt<'a> for Vec<AddressLookupTableAccount> {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        self.as_slice()
     }
 }
 
-impl<'a> TxnKindExt<'a> for Arc<AddressLookupTableAccount> {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(std::slice::from_ref(self.as_ref()))
-    }
-}
-impl<'a> TxnKindExt<'a> for Vec<AddressLookupTableAccount> {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(self.as_slice())
+impl<'a> LutExt<'a> for Arc<Vec<AddressLookupTableAccount>> {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        self.as_slice()
     }
 }
 
-impl<'a> TxnKindExt<'a> for Arc<Vec<AddressLookupTableAccount>> {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(&self[..])
+impl<'a> LutExt<'a> for Arc<[AddressLookupTableAccount]> {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        &self[..]
     }
 }
 
-impl<'a> TxnKindExt<'a> for Arc<[AddressLookupTableAccount]> {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(&self[..])
-    }
-}
-
-impl<'a> TxnKindExt<'a> for AddressLookupTableAccount {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Versioned(std::slice::from_ref(self))
-    }
-}
-
-impl<'a> TxnKindExt<'a> for () {
-    fn compile(&'a self) -> TxnKind<'a> {
-        TxnKind::Legacy
-    }
-}
-
-impl<'a> TxnKindExt<'a> for TxnKindOwned {
-    fn compile(&'a self) -> TxnKind<'a> {
-        match self {
-            TxnKindOwned::Legacy => TxnKind::Legacy,
-            TxnKindOwned::Versioned(v) => TxnKind::Versioned(v.as_slice()),
-        }
+impl<'a> LutExt<'a> for AddressLookupTableAccount {
+    fn compile(&'a self) -> &'a [AddressLookupTableAccount] {
+        std::slice::from_ref(self)
     }
 }
