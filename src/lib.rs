@@ -325,13 +325,6 @@ impl From<ArchivedAddressLookupTableAccount> for AddressLookupTableAccount {
     }
 }
 
-pub trait SignersExt {
-    type Signers: solana_transaction::Signers + ?Sized;
-    fn signers(&self) -> &Self::Signers;
-    fn fee_payer(&self) -> &Keypair;
-    fn tip_payer(&self) -> &Keypair;
-}
-
 pub enum TxnKind {
     Legacy,
     VersionedOne(AddressLookupTableAccount),
