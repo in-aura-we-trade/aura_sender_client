@@ -1,12 +1,17 @@
 //CODEGEN BELOW - DO NOT TOUCH ME
 pub mod aura_sender {
-    use proto_rs::{proto_message, proto_rpc};
     use crate::TxnData;
+    use proto_rs::{proto_message, proto_rpc};
     use solana_signature::Signature;
 
     use crate::TxnAuthInterceptor;
 
-    #[proto_rpc(rpc_package = "aura_sender_rpc", rpc_server = false, rpc_client = true, rpc_client_ctx = "TxnAuthInterceptor")]
+    #[proto_rpc(
+        rpc_package = "aura_sender_rpc",
+        rpc_server = false,
+        rpc_client = true,
+        rpc_client_ctx = "TxnAuthInterceptor"
+    )]
     pub trait AuraSenderRpc {
         async fn send_transaction(
             &self,
@@ -17,7 +22,6 @@ pub mod aura_sender {
             &self,
             request: ::tonic::Request<Ping>,
         ) -> ::core::result::Result<::tonic::Response<Pong>, ::tonic::Status>;
-
     }
 
     #[proto_message]
@@ -34,5 +38,4 @@ pub mod aura_sender {
     pub struct Pong {
         pub id: u32,
     }
-
 }

@@ -230,7 +230,10 @@ impl SendProcessors {
         if self.jito.grpc || self.jito.rpc {
             num_procs += 1
         }
-        if self.aura.main_endpoint || self.aura.revert_endpoint {
+        if self.aura.main_endpoint {
+            num_procs += 1
+        }
+        if self.aura.revert_endpoint {
             num_procs += 1
         }
         if self.bloxroute {
